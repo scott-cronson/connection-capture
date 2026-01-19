@@ -1,0 +1,17 @@
+# node
+node_modules/
+dist/
+build/
+
+# env/secrets
+.env
+*.pem
+*.key
+
+# Chrome extension packages
+*.crx
+*.zip
+
+# OS
+.DS_Store
+Thumbs.db
