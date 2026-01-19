@@ -1,5 +1,5 @@
 const KEY_SEPARATOR = ":";
-const PREFERRED_FIELDS = ["url", "name", "cx_level", "mutuals", "lastSeen", "visits"];
+const PREFERRED_FIELDS = ["url", "name", "cx_level", "mutuals", "lastSeen",];
 
 const escapeCsvValue = (value) => {
   const stringValue = value === null || value === undefined ? "" : String(value);
@@ -115,7 +115,8 @@ const downloadCsv = async () => {
 
   const link = document.createElement("a");
   link.href = url;
-  link.download = `${DOWNLOADS_SUBDIRECTORY}/linkedin-profiles-${formatLocalDate()}.csv`;
+  // link.download = `${DOWNLOADS_SUBDIRECTORY}/profile_metadata-${formatLocalDate()}.csv`;
+  link.download = `profile_metadata-${formatLocalDate()}.csv`;
   document.body.appendChild(link);
   link.click();
   link.remove();

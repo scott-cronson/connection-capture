@@ -93,13 +93,11 @@ const upsertProfileVisit = async (urlString, fields = {}) => {
         ...prev,
         url: normalizedUrl,
         lastSeen: nowDate,
-        visits: (prev.visits || 0) + 1,
         ...mergedFields
       }
     : {
         url: normalizedUrl,
         lastSeen: nowDate,
-        visits: 1,
         ...mergedFields
       };
 
@@ -162,8 +160,6 @@ chrome.downloads.onDeterminingFilename.addListener((downloadItem, suggest) => {
     return;
   }
 
-  // const extension = getDownloadExtension(downloadItem);
-  // filename: `${DOWNLOADS_SUBDIRECTORY}/${slug}${extension}`,
   suggest({
     filename: `${DOWNLOADS_SUBDIRECTORY}/${slug}.pdf`,
     conflictAction: "uniquify"
