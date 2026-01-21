@@ -1,5 +1,6 @@
 const KEY_SEPARATOR = ":";
-const PREFERRED_FIELDS = ["url", "name", "cx_level", "mutuals", "lastSeen",];
+const PREFERRED_FIELDS = ["url", "name", "cx_level", "mutuals", "lastSeen"];
+const EXTENSION_ENABLED_KEY = "extensionEnabled";
 
 const escapeCsvValue = (value) => {
   const stringValue = value === null || value === undefined ? "" : String(value);
@@ -106,6 +107,15 @@ const clearStorage = async () => {
   await chrome.storage.local.clear();
 };
 
+const loadExtensionEnabled = async () => {
+  const result = await chrome.storage.local.get(EXTENSION_ENABLED_KEY);
+  if (typeof result[EXTENSION_ENABLED_KEY] === "boolean") {
+    return result[EXTENSION_ENABLED_KEY];
+  }
+  await chrome.storage.local.set({ [EXTENSION_ENABLED_KEY]: true });
+  return true;
+};
+
 const downloadCsv = async () => {
   setStatus("Preparing CSV...");
   const storage = await chrome.storage.local.get(null);
@@ -115,7 +125,6 @@ const downloadCsv = async () => {
 
   const link = document.createElement("a");
   link.href = url;
-  // link.download = `${DOWNLOADS_SUBDIRECTORY}/profile_metadata-${formatLocalDate()}.csv`;
   link.download = `profile_metadata-${formatLocalDate()}.csv`;
   document.body.appendChild(link);
   link.click();
@@ -128,8 +137,32 @@ document.addEventListener("DOMContentLoaded", () => {
   const button = document.getElementById("download-csv");
   const clearButton = document.getElementById("clear-csv");
   const confirmClearButton = document.getElementById("confirm-clear");
+  const toggle = document.getElementById("extension-toggle");
   if (!button) {
     return;
+  }
+
+  if (toggle) {
+    loadExtensionEnabled()
+      .then((enabled) => {
+        toggle.checked = enabled;
+      })
+      .catch((error) => {
+        const message = error && error.message ? error.message : String(error);
+        setStatus(`Failed to load setting: ${message}`);
+      });
+
+    toggle.addEventListener("change", () => {
+      const enabled = toggle.checked;
+      chrome.storage.local.set({ [EXTENSION_ENABLED_KEY]: enabled })
+        .then(() => {
+          setStatus(enabled ? "Extension enabled." : "Extension disabled.");
+        })
+        .catch((error) => {
+          const message = error && error.message ? error.message : String(error);
+          setStatus(`Failed to save setting: ${message}`);
+        });
+    });
   }
 
   button.addEventListener("click", () => {

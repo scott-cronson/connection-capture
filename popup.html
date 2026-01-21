@@ -25,6 +25,17 @@
       .actions {
         margin-top: 12px;
       }
+      .toggle {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 10px;
+        font-size: 13px;
+        color: #24292f;
+      }
+      .toggle input {
+        margin: 0;
+      }
       button {
         appearance: none;
         border: 1px solid #0969da;
@@ -67,6 +78,10 @@
       Understand your LinkedIn connections and download profile data.
     </div>
     <div class="actions">
+      <label class="toggle">
+        <input id="extension-toggle" type="checkbox" />
+        Enable extension
+      </label>
       <button id="download-csv" type="button">Download CSV</button>
       <button id="clear-csv" class="secondary" type="button">Clear CSV</button>
       <button id="confirm-clear" class="danger hidden" type="button">
@@ -79,3 +94,5 @@
     <script src="popup.js"></script>
   </body>
 </html>
+
+

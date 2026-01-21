@@ -7,6 +7,44 @@ const NOTIFICATION_ICON = "icons/icon-128.png";
 const PENDING_DOWNLOAD_TIMEOUT_MS = 15000;
 const pendingDownloadsByTab = new Map();
 
+const EXTENSION_ENABLED_KEY = "extensionEnabled";
+let extensionEnabled = true;
+
+const setActionIcon = (enabled) => {
+  const suffix = enabled ? "" : "-disabled";
+  chrome.action.setIcon({
+    path: {
+      16: `icons/icon-16${suffix}.png`,
+      48: `icons/icon-48${suffix}.png`,
+      128: `icons/icon-128${suffix}.png`
+    }
+  });
+};
+
+const loadExtensionEnabled = async () => {
+  const result = await chrome.storage.local.get(EXTENSION_ENABLED_KEY);
+  // Handles unset or corrupted values from storage.
+  if (typeof result[EXTENSION_ENABLED_KEY] === "boolean") {
+    extensionEnabled = result[EXTENSION_ENABLED_KEY];
+    setActionIcon(extensionEnabled);
+    return extensionEnabled;
+  }
+  await chrome.storage.local.set({ [EXTENSION_ENABLED_KEY]: true });
+  extensionEnabled = true;
+  setActionIcon(extensionEnabled);
+  return extensionEnabled;
+};
+
+void loadExtensionEnabled();
+
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName !== "local" || !changes[EXTENSION_ENABLED_KEY]) {
+    return;
+  }
+  extensionEnabled = Boolean(changes[EXTENSION_ENABLED_KEY].newValue);
+  setActionIcon(extensionEnabled);
+});
+
 const isLinkedInProfileUrl = (urlString) => {
   try {
     const url = new URL(urlString);
@@ -145,6 +183,10 @@ const runExtractProfileFields = async (tabId) => {
 };
 
 chrome.downloads.onDeterminingFilename.addListener((downloadItem, suggest) => {
+  if (!extensionEnabled) {
+    return;
+  }
+
   const slugFromDownload = extractProfileSlug(
     downloadItem.referrer || downloadItem.finalUrl || downloadItem.url || "",
     LINKEDIN_HOST
@@ -166,7 +208,12 @@ chrome.downloads.onDeterminingFilename.addListener((downloadItem, suggest) => {
   });
 });
 
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+const handleTabUpdated = async (tabId, changeInfo, tab) => {
+  await loadExtensionEnabled();
+  if (!extensionEnabled) {
+    return;
+  }
+
   if (changeInfo.status !== "complete" || !tab.url) {
     return;
   }
@@ -176,6 +223,9 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   }
 
   setTimeout(() => {
+    if (!extensionEnabled) {
+      return;
+    }
     setPendingDownload(tabId, tab.url);
     runDownloadProfilePdf(tabId)
       .then(async () => {
@@ -190,4 +240,8 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
         showNotification(`Failure: ${errorMessage}`);
       });
   }, 1000);
+};
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  void handleTabUpdated(tabId, changeInfo, tab);
 });
