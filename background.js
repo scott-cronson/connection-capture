@@ -151,6 +151,13 @@ const upsertProfileVisit = async (urlString, fields = {}) => {
 
 const getAllStorage = async () => chrome.storage.local.get(null);
 
+const isNewProfile = async (urlString) => {
+  const normalizedUrl = normalizeLinkedInUrl(urlString);
+  const key = `profile:${normalizedUrl}`;
+  const existing = await chrome.storage.local.get(key);
+  return !existing[key];
+};
+
 const showNotification = (message) => {
   chrome.notifications.create({
     type: "basic",
@@ -237,6 +244,9 @@ const handleTabUpdated = async (tabId, changeInfo, tab) => {
   }
 
   if (!isLinkedInProfileUrl(tab.url)) {
+    return;
+  }
+  if (!(await isNewProfile(tab.url))) {
     return;
   }
 
