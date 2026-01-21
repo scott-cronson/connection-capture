@@ -88,20 +88,22 @@ const getMostRecentPendingSlug = () => {
   return best.slug;
 };
 
-const getDownloadExtension = (downloadItem) => {
-  const sources = [downloadItem.filename, downloadItem.finalUrl, downloadItem.url];
-  for (const source of sources) {
-    if (!source) {
-      continue;
-    }
-    const match = String(source).match(/\.([A-Za-z0-9]+)(?:$|\?|#)/);
-    if (match) {
-      return `.${match[1]}`;
-    }
+const isPdfDownload = (downloadItem) => {
+  if (downloadItem.byExtensionId === chrome.runtime.id) {
+    return false;
   }
-  return ".pdf";
+  if (downloadItem.url && /^data:text\/csv/i.test(downloadItem.url)) {
+    return false;
+  }
+  if (downloadItem.filename && /\.csv$/i.test(downloadItem.filename)) {
+    return false;
+  }
+  if (downloadItem.mime && downloadItem.mime.toLowerCase() === "application/pdf") {
+    return true;
+  }
+  const sources = [downloadItem.filename, downloadItem.finalUrl, downloadItem.url];
+  return sources.some((source) => source && /\.pdf($|\?|#)/i.test(String(source)));
 };
-
 const pickFieldValue = (nextValue, prevValue) => {
   if (typeof nextValue === "string") {
     const trimmed = nextValue.trim();
@@ -183,6 +185,18 @@ const runExtractProfileFields = async (tabId) => {
 };
 
 chrome.downloads.onDeterminingFilename.addListener((downloadItem, suggest) => {
+  if (downloadItem.byExtensionId === chrome.runtime.id) {
+    suggest({
+      filename: `${DOWNLOADS_SUBDIRECTORY}/profile-metadata-${formatLocalDate()}.csv`,
+      conflictAction: "uniquify"
+    });
+    return;
+  }
+
+  if (!isPdfDownload(downloadItem)) {
+    return;
+  }
+
   if (!extensionEnabled) {
     return;
   }
@@ -245,3 +259,6 @@ const handleTabUpdated = async (tabId, changeInfo, tab) => {
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   void handleTabUpdated(tabId, changeInfo, tab);
 });
+
+
+

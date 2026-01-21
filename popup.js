@@ -22,14 +22,6 @@ const parseStorageKey = (storageKey) => {
   };
 };
 
-const determineKeyHeader = (entries) => {
-  const headers = new Set(entries.map((entry) => entry.keyHeader));
-  if (headers.size === 1) {
-    return entries[0].keyHeader;
-  }
-  return "key";
-};
-
 const collectFieldNames = (entries) => {
   const fields = new Set();
   entries.forEach((entry) => {
@@ -51,33 +43,29 @@ const collectFieldNames = (entries) => {
 };
 
 const buildCsvFromStorage = (storage) => {
-  const entries = Object.entries(storage).map(([key, value]) => {
-    const parsedKey = parseStorageKey(key);
-    return {
-      originalKey: key,
-      keyHeader: parsedKey.header,
-      keyValue: parsedKey.value,
-      data: value
-    };
-  });
+  const entries = Object.entries(storage)
+    .filter(([key]) => key.startsWith("profile:"))
+    .map(([key, value]) => {
+      const parsedKey = parseStorageKey(key);
+      return {
+        originalKey: key,
+        keyValue: parsedKey.value,
+        data: value
+      };
+    });
 
   if (entries.length === 0) {
-    return "key";
+    return "url";
   }
 
-  const keyHeader = determineKeyHeader(entries);
   const fieldNames = collectFieldNames(entries);
-  const headerRow = [keyHeader, ...fieldNames];
+  const headerRow = ["url", ...fieldNames];
 
   const rows = entries.map((entry) => {
-    const firstValue = entry.keyHeader === keyHeader
-      ? entry.keyValue
-      : entry.originalKey;
-
+    const firstValue = entry.keyValue || entry.originalKey;
     const data = entry.data && typeof entry.data === "object" && !Array.isArray(entry.data)
       ? entry.data
       : {};
-
     const values = fieldNames.map((field) => data[field]);
     return [firstValue, ...values];
   });
@@ -123,22 +111,26 @@ const downloadCsv = async () => {
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
 
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `profile_metadata-${formatLocalDate()}.csv`;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
-  setStatus("CSV downloaded.");
+  chrome.downloads.download(
+    { url, saveAs: false, conflictAction: "uniquify" },
+    () => {
+      const error = chrome.runtime.lastError;
+      if (error) {
+        setStatus(`Download failed: ${error.message}`);
+      } else {
+        setStatus("CSV downloaded.");
+      }
+      URL.revokeObjectURL(url);
+    }
+  );
 };
 
 document.addEventListener("DOMContentLoaded", () => {
-  const button = document.getElementById("download-csv");
+  const downloadCSVButton = document.getElementById("download-csv");
   const clearButton = document.getElementById("clear-csv");
   const confirmClearButton = document.getElementById("confirm-clear");
   const toggle = document.getElementById("extension-toggle");
-  if (!button) {
+  if (!downloadCSVButton) {
     return;
   }
 
@@ -165,7 +157,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  button.addEventListener("click", () => {
+  downloadCSVButton.addEventListener("click", () => {
     downloadCsv().catch((error) => {
       const message = error && error.message ? error.message : String(error);
       setStatus(`Download failed: ${message}`);
