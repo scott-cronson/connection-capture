@@ -48,8 +48,12 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
 const isLinkedInProfileUrl = (urlString) => {
   try {
     const url = new URL(urlString);
-    return url.hostname === LINKEDIN_HOST
-      && url.pathname.startsWith(LINKEDIN_PROFILE_PREFIX);
+    if (url.hostname !== LINKEDIN_HOST) {
+      return false;
+    }
+    const path = url.pathname.replace(/\/+$/, "");
+    const parts = path.split("/").filter(Boolean);
+    return parts.length === 2 && parts[0] === "in";
   } catch {
     return false;
   }
