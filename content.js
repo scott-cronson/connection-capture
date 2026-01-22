@@ -38,6 +38,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       .then(() => sendResponse({ ok: true }))
       .catch((error) => {
         const errorMessage = error && error.message ? error.message : String(error);
+        void logError("content downloadProfilePdf", error);
         sendResponse({ ok: false, error: errorMessage });
       });
     return true;
@@ -49,6 +50,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       .then((fields) => sendResponse({ ok: true, fields }))
       .catch((error) => {
         const errorMessage = error && error.message ? error.message : String(error);
+        void logError("content extractProfileFields", error);
         sendResponse({ ok: false, error: errorMessage });
       });
     return true;

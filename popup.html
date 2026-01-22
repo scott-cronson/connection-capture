@@ -5,92 +5,237 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Connection Capture</title>
     <style>
+      :root {
+        --bg: #f6f3ea;
+        --bg-accent: #e6f0e6;
+        --card: #ffffff;
+        --ink: #1f1a18;
+        --muted: #5f5a54;
+        --primary: #1f7a62;
+        --primary-hover: #196b56;
+        --secondary: #f4f2ec;
+        --border: #d6d1c7;
+        --danger: #c43c2f;
+        --danger-hover: #a83429;
+        --shadow: rgba(31, 26, 24, 0.14);
+        --ring: rgba(31, 122, 98, 0.28);
+        --panel-radius: 14px;
+        --transition: 160ms ease;
+        --font-body: "Trebuchet MS", "Verdana", "Tahoma", sans-serif;
+        --font-display: "Palatino Linotype", "Book Antiqua", "Georgia", serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
       body {
         margin: 0;
-        padding: 16px 18px;
-        font-family: Arial, sans-serif;
+        padding: 0;
+        font-family: var(--font-body);
         font-size: 14px;
-        color: #1f2328;
-        background: #ffffff;
-        min-width: 220px;
+        color: var(--ink);
+        background: radial-gradient(circle at top, #ffffff 0%, var(--bg) 45%, var(--bg-accent) 100%);
+        min-width: 280px;
+      }
+      .app {
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .header {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
       }
       .title {
-        font-weight: 600;
-        margin-bottom: 6px;
+        font-family: var(--font-display);
+        font-size: 18px;
+        letter-spacing: 0.2px;
       }
       .note {
-        color: #57606a;
+        color: var(--muted);
         line-height: 1.4;
+        font-size: 12px;
       }
-      .actions {
-        margin-top: 12px;
+      .panel {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--panel-radius);
+        padding: 12px;
+        box-shadow: 0 10px 24px -18px var(--shadow);
+        animation: panelIn 240ms ease both;
+      }
+      .section-title {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--muted);
+      }
+      .section-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 10px;
       }
       .toggle {
         display: flex;
         align-items: center;
         gap: 8px;
-        margin-top: 10px;
+        font-size: 12px;
+        color: var(--ink);
+      }
+      .toggle.prominent {
+        margin-top: 8px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        background: #eef7f3;
+        border: 1px solid #d2e4dd;
         font-size: 13px;
-        color: #24292f;
+        font-weight: 600;
       }
       .toggle input {
+        accent-color: var(--primary);
         margin: 0;
       }
-      button {
+      .buttons {
+        display: grid;
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .btn {
         appearance: none;
-        border: 1px solid #0969da;
-        background: #0969da;
+        border: 1px solid transparent;
+        background: var(--primary);
         color: #ffffff;
-        padding: 8px 12px;
-        border-radius: 6px;
+        padding: 9px 12px;
+        border-radius: 10px;
         font-weight: 600;
         cursor: pointer;
         width: 100%;
+        transition: transform var(--transition), box-shadow var(--transition), background var(--transition);
+        box-shadow: 0 8px 16px -12px var(--shadow);
       }
-      button.secondary {
-        margin-top: 8px;
-        border-color: #d0d7de;
-        background: #f6f8fa;
-        color: #1f2328;
+      .btn:hover {
+        background: var(--primary-hover);
       }
-      button.danger {
-        border-color: #d1242f;
-        background: #d1242f;
-        color: #ffffff;
+      .btn:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px var(--ring);
       }
-      button:active {
+      .btn.secondary {
+        border-color: var(--border);
+        background: var(--secondary);
+        color: var(--ink);
+      }
+      .btn.secondary:hover {
+        background: #eae6dd;
+      }
+      .btn.small {
+        font-size: 12px;
+        padding: 6px 10px;
+        width: 70%;
+        justify-self: start;
+      }
+      .btn.danger {
+        border-color: var(--danger);
+        background: var(--danger);
+      }
+      .btn.danger:hover {
+        background: var(--danger-hover);
+      }
+      .btn:active {
         transform: translateY(1px);
+      }
+      .status {
+        margin-top: 8px;
+        font-size: 12px;
+        color: var(--muted);
+        word-break: break-word;
+        min-height: 16px;
+      }
+      .status.is-error {
+        color: #9a2c23;
+      }
+      .log-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        max-height: 140px;
+        overflow-y: auto;
+        padding-right: 4px;
+      }
+      .log-entry {
+        font-size: 12px;
+        padding: 6px 8px;
+        border-radius: 8px;
+        background: #f6f2e9;
+        border: 1px solid #eee6d8;
+        color: #2b2421;
+      }
+      .log-entry.is-error {
+        background: #fff2f0;
+        border-color: #f2c9c5;
+        color: #9a2c23;
+      }
+      .log-empty {
+        font-size: 12px;
+        color: var(--muted);
       }
       .hidden {
         display: none;
       }
-      .status {
-        margin-top: 10px;
-        font-size: 12px;
-        color: #57606a;
-        word-break: break-word;
+      @keyframes panelIn {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
       }
     </style>
   </head>
   <body>
-    <div class="title">Connection Capture</div>
-    <div class="note">
-      Understand your LinkedIn connections and download profile data.
+    <div class="app">
+      <header class="header">
+        <div class="title">Connection Capture</div>
+        <div class="note">
+          Understand your LinkedIn connections and download profile data.
+        </div>
+      </header>
+
+      <section class="panel">
+        <div class="section-title">Controls</div>
+        <label class="toggle prominent">
+          <input id="extension-toggle" type="checkbox" />
+          Enable extension
+        </label>
+        <div class="buttons">
+          <button id="download-csv" class="btn" type="button">Download CSV</button>
+          <button id="clear-csv" class="btn secondary small" type="button">Clear CSV</button>
+          <button id="confirm-clear" class="btn danger small hidden" type="button">
+            Confirm Clear
+          </button>
+        </div>
+        <div id="status" class="status" aria-live="polite"></div>
+      </section>
+
+      <section class="panel">
+        <div class="section-row">
+          <div class="section-title">Recent activity</div>
+          <label class="toggle">
+            <input id="log-toggle" type="checkbox" />
+            Show log
+          </label>
+        </div>
+        <div id="log-list" class="log-list hidden"></div>
+        <div id="log-empty" class="log-empty hidden">No recent activity.</div>
+      </section>
     </div>
-    <div class="actions">
-      <label class="toggle">
-        <input id="extension-toggle" type="checkbox" />
-        Enable extension
-      </label>
-      <button id="download-csv" type="button">Download CSV</button>
-      <button id="clear-csv" class="secondary" type="button">Clear CSV</button>
-      <button id="confirm-clear" class="danger hidden" type="button">
-        Confirm Clear
-      </button>
-      <div id="status" class="status" aria-live="polite"></div>
-    </div>
+    <script src="logger.js"></script>
     <script src="popup.js"></script>
   </body>
 </html>
-
 

@@ -1,4 +1,4 @@
-importScripts("constants.js", "utility.js");
+importScripts("constants.js", "utility.js", "logger.js");
 
 const NOTIFICATION_TITLE = "Connection Capture";
 const LINKEDIN_HOST = "www.linkedin.com";
@@ -154,8 +154,13 @@ const getAllStorage = async () => chrome.storage.local.get(null);
 const isNewProfile = async (urlString) => {
   const normalizedUrl = normalizeLinkedInUrl(urlString);
   const key = `profile:${normalizedUrl}`;
-  const existing = await chrome.storage.local.get(key);
-  return !existing[key];
+  try {
+    const existing = await chrome.storage.local.get(key);
+    return !existing[key];
+  } catch (error) {
+    void logError("check profile history", error);
+    return true;
+  }
 };
 
 const showNotification = (message) => {
@@ -249,6 +254,7 @@ const handleTabUpdated = async (tabId, changeInfo, tab) => {
   if (!(await isNewProfile(tab.url))) {
     return;
   }
+  const profileSlug = extractProfileSlug(tab.url, LINKEDIN_HOST);
 
   setTimeout(() => {
     if (!extensionEnabled) {
@@ -259,6 +265,8 @@ const handleTabUpdated = async (tabId, changeInfo, tab) => {
       .then(async () => {
         const fields = await runExtractProfileFields(tabId);
         await upsertProfileVisit(tab.url, fields);
+        const slugLabel = profileSlug || "unknown";
+        void logInfo(`Profile downloaded: ${slugLabel}`);
         const allStorage = await getAllStorage();
         const storageMessage = JSON.stringify(allStorage);
         showNotification(`Success: downloadProfilePdf triggered. Storage: ${storageMessage}`);
@@ -266,6 +274,7 @@ const handleTabUpdated = async (tabId, changeInfo, tab) => {
       .catch((error) => {
         const errorMessage = error && error.message ? error.message : String(error);
         showNotification(`Failure: ${errorMessage}`);
+        void logError("profile download/extract", error);
       });
   }, 1000);
 };
