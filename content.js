@@ -14,6 +14,22 @@ const downloadProfilePdf = async () => {
   clickByAriaLabel("Save to PDF");
 };
 
+const downloadProfilePdfWithRetry = async () => {
+  try {
+    await downloadProfilePdf();
+  } catch (error) {
+    // Retry once in case the SPA UI has not finished rendering yet.
+    await wait(2000);
+    try {
+      await downloadProfilePdf();
+    } catch (retryError) {
+      const message = retryError && retryError.message ? retryError.message : String(retryError);
+      const slug = extractProfileSlug(window.location.href, "www.linkedin.com") || "unknown";
+      throw new Error(`${message} (profile: ${slug})`);
+    }
+  }
+};
+
 const getText = (selector) => {
   const element = document.querySelector(selector);
   if (!element) {
@@ -34,7 +50,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
 
   if (message.type === "downloadProfilePdf") {
-    downloadProfilePdf()
+    downloadProfilePdfWithRetry()
       .then(() => sendResponse({ ok: true }))
       .catch((error) => {
         const errorMessage = error && error.message ? error.message : String(error);

@@ -1,9 +1,7 @@
 importScripts("constants.js", "utility.js", "logger.js");
 
-const NOTIFICATION_TITLE = "Connection Capture";
 const LINKEDIN_HOST = "www.linkedin.com";
 const LINKEDIN_PROFILE_PREFIX = "/in/";
-const NOTIFICATION_ICON = "icons/icon-128.png";
 const PENDING_DOWNLOAD_TIMEOUT_MS = 15000;
 const pendingDownloadsByTab = new Map();
 
@@ -163,15 +161,6 @@ const isNewProfile = async (urlString) => {
   }
 };
 
-const showNotification = (message) => {
-  chrome.notifications.create({
-    type: "basic",
-    iconUrl: NOTIFICATION_ICON,
-    title: NOTIFICATION_TITLE,
-    message
-  });
-};
-
 const runDownloadProfilePdf = async (tabId) => {
   const response = await chrome.tabs.sendMessage(tabId, {
     type: "downloadProfilePdf"
@@ -267,13 +256,8 @@ const handleTabUpdated = async (tabId, changeInfo, tab) => {
         await upsertProfileVisit(tab.url, fields);
         const slugLabel = profileSlug || "unknown";
         void logInfo(`Profile downloaded: ${slugLabel}`);
-        const allStorage = await getAllStorage();
-        const storageMessage = JSON.stringify(allStorage);
-        showNotification(`Success: downloadProfilePdf triggered. Storage: ${storageMessage}`);
       })
       .catch((error) => {
-        const errorMessage = error && error.message ? error.message : String(error);
-        showNotification(`Failure: ${errorMessage}`);
         void logError("profile download/extract", error);
       });
   }, 1000);
