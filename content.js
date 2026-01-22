@@ -35,13 +35,16 @@ const getText = (selector) => {
   if (!element) {
     return "";
   }
-  return (element.textContent || "").trim();
+  return (element.innerText || "").trim();
 };
 
 const extractProfileFields = () => ({
   cx_level: getText(".dist-value"),
   name: getText("h1"),
+  // LinkedIn often duplicates the mutual-connection line; keep only the first line.
   mutuals: getText('a[href^="https://www.linkedin.com/search/results/people/"]')
+    .split("\n")[0]
+    .trim()
 });
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
